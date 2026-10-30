@@ -1,0 +1,4 @@
+Level_pct,Days,DaysLoadWorst,DaysPVWorst,DaysEVWorst,DaysLoadAbovePV,DaysLoadAboveEV
+10,365,365,0,0,365,365
+20,365,365,0,0,365,365
+30,365,365,0,0,365,365
