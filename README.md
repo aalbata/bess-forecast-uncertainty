@@ -5,13 +5,13 @@ MATLAB code, weather data and trial-level results for the article
 > Forecast error source and timing govern the peak-shaving value of battery storage in urban districts
 > Asif Nawaz, Ali Al Bataineh, Irfan Ahmed, Munther Gdeisat and Nguyen Hai
 
-The study schedules a 500 kWh / 250 kW battery energy storage system (BESS) for an urban district with building load, rooftop photovoltaic (PV) generation and electric vehicle (EV) charging, and measures how forecast errors in each source change the peak reduction and the energy-cost reduction of the schedule. It compares a day-ahead linear program, a risk-neutral stochastic program, conditional value-at-risk (CVaR) and worst-case scenario programs, receding-horizon re-optimization and a perfect-information bound, on a synthetic design day and on 365 weather-driven days of 2023 in Abu Dhabi.
+The study schedules a 500 kWh / 250 kW battery energy storage system (BESS) for an urban district with building load, rooftop photovoltaic (PV) generation and electric vehicle (EV) charging, and measures how forecast errors in each source change the peak reduction and the energy-cost reduction of the schedule. It compares a day-ahead linear program, a risk-neutral stochastic program, conditional value-at-risk (CVaR) and worst-case scenario programs, receding-horizon re-optimization and a perfect-information reference on a synthetic design day and on random days around it, and repeats the attribution of forecast errors to their sources on 365 weather-driven days of 2023 in Abu Dhabi.
 
 ## Requirements
 
 - MATLAB R2026b (developed and run on Windows 11, Intel Core Ultra 7 155U, 16 GB memory)
 - Optimization Toolbox (`linprog`, dual simplex of HiGHS)
-- Statistics and Machine Learning Toolbox (`tinv`, `signrank`, `regress`, `prctile`)
+- Statistics and Machine Learning Toolbox (`tinv`, `signrank`, `regress`, `corr`, `prctile`)
 
 No other software is needed. The weather data are included in `data/`.
 
@@ -25,7 +25,7 @@ reproduce('download')  % download the PVGIS data again, then run as 'full'
 
 `reproduce` first runs `tests/run_tests.m`, which checks the design-day controllers against reference values, checks the solvers against reference trials, and checks the band invariance of the energy cost.
 
-The full run solves 1,818,383 linear programs (each receding-horizon day solves 96). On the machine above it took about 13 hours of MATLAB process time, run as blocks of trials in seven to eight parallel processes. The experiment functions accept a trial range (for example `run_controllers(1:200)`), so blocks of trials can run in separate MATLAB processes; concatenating the blocks in trial order gives the same files as one run.
+The full run solves 1,821,983 linear programs (each receding-horizon day solves 96). On the machine above it took about 13 hours of MATLAB process time, run as blocks in seven to eight parallel processes. The experiment functions accept a range of trials (for example `run_controllers(1:200)`, and `run_weather_year` also a range of days), so blocks can run in separate MATLAB processes. The shipped files hold the merged blocks in the row order of a single run; `run_battery_size` and `run_demand_charge` repeat their exact-forecast rows in every block, and these rows appear once in the merged files.
 
 ## Main results
 
@@ -69,7 +69,7 @@ All powers are in kW, energies in kWh, costs in cost units, reductions in percen
 | `nominal_facts.csv` | scalar | profile maxima and times, arbitrage optimum and closed-form value |
 | `timing_shift.csv` | source and time shift | `Shift_min` (positive: forecast late), `PeakReduction_pct`, `nMAE_Net_pct`, `MaxAbsError_kW` |
 | `source_magnitude_trials.csv` | source, amplitude and trial (B2) | `Source`, `Level_pct` (amplitude e), `Trial`, peak and cost results, `nMAE_*_pct` (energy-weighted normalized mean absolute error), `ErrorAtB0Peak_kW`, `ForecastPeakTime_h`, `RealisedPeakTime_h` |
-| `mpc_sources_trials.csv` | source, amplitude and trial (RH) | as above for the receding-horizon schedule; `Fallbacks` counts failed re-solves |
+| `mpc_sources_trials.csv` | source, amplitude and trial (RH) | `Source`, `Level_pct`, `Trial`, peak, cost and throughput results of the receding-horizon schedule, `Fallbacks` (failed re-solves) |
 | `controllers_trials.csv` | controller, amplitude and random realized day | `Controller` (B1, B2, SP, CVaR, WC, RH, PI), peak, cost and throughput results, `PeakB0_kW`, `CostB0`, in-sample peaks on the planning scenarios |
 | `risk_sweep_trials.csv` | alpha, lambda and realized day | `Alpha`, `Lambda`, realized and in-sample peaks |
 | `scenario_count_trials.csv` | program, number of planning scenarios and realized day | `Controller` (B2, SP, CVaR), `Scenarios` (10, 20, 50, 100), realized and in-sample peaks |

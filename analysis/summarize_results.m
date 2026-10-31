@@ -50,7 +50,7 @@ for e = P.levels
         b = sortrows(T(T.Source == pairs(p, 2) & T.Level_pct == e, :), 'Trial');
         d = a.PeakReduction_pct - b.PeakReduction_pct;
         [md, lo, hi] = mean_ci(d);
-        C(end + 1, :) = {pairs(p, 1), pairs(p, 2), e, numel(d), md, lo, hi, signrank(d), sum(d < 0)}; %#ok<AGROW>
+        C(end + 1, :) = {pairs(p, 1), pairs(p, 2), e, numel(d), md, lo, hi, signrank(d), sum(d < -1e-9)}; %#ok<AGROW>
     end
 end
 write(C, {'SourceA', 'SourceB', 'Level_pct', 'N', 'MeanDifference_pp', 'CI95Low', 'CI95High', ...
@@ -151,7 +151,7 @@ for e = P.levels
             [md, dlo, dhi] = mean_ci(d);
             seed = seed + 1;
             [qlo, qhi] = bootstrap_ci(@(x, y) cvar_upper(x, 0.90) - cvar_upper(y, 0.90), seed, A.Peak_kW, base.Peak_kW);
-            D(end + 1, :) = {c, e, numel(d), md, dlo, dhi, signrank(d), sum(d > 0), ...
+            D(end + 1, :) = {c, e, numel(d), md, dlo, dhi, signrank(d), sum(d > 1e-9), ...
                 cvar_upper(A.Peak_kW, 0.90) - cvar_upper(base.Peak_kW, 0.90), qlo, qhi}; %#ok<AGROW>
         end
     end
@@ -207,15 +207,22 @@ for S = unique(T.Scenarios)'
     for c = ["B2" "SP" "CVaR"]
         A = sortrows(T(T.Controller == c & T.Scenarios == S, :), 'Trial');
         [mx, lo, hi] = mean_ci(A.PeakReduction_pct);
-        [md, dlo, dhi] = mean_ci(A.PeakReduction_pct - base.PeakReduction_pct);
+        d = A.PeakReduction_pct - base.PeakReduction_pct;
+        [md, dlo, dhi] = mean_ci(d);
+        p = 1;
+        if any(abs(d) > 1e-9)
+            p = signrank(d);
+        end
         seed = seed + 1;
         [qlo, qhi] = bootstrap_ci(@(x, y) cvar_upper(x, 0.90) - cvar_upper(y, 0.90), seed, A.Peak_kW, base.Peak_kW);
         C(end + 1, :) = {c, S, height(A), mx, lo, hi, mean(A.InSampleCVaR90_kW), cvar_upper(A.Peak_kW, 0.90), ...
-            md, dlo, dhi, cvar_upper(A.Peak_kW, 0.90) - cvar_upper(base.Peak_kW, 0.90), qlo, qhi, sum(A.Feasible)}; %#ok<AGROW>
+            md, dlo, dhi, median(d), p, sum(d > 1e-9), sum(d < -1e-9), ...
+            cvar_upper(A.Peak_kW, 0.90) - cvar_upper(base.Peak_kW, 0.90), qlo, qhi, sum(A.Feasible)}; %#ok<AGROW>
     end
 end
 write(C, {'Controller', 'Scenarios', 'N', 'MeanPeakReduction_pct', 'CI95Low', 'CI95High', ...
     'MeanInSampleCVaR90_kW', 'OutOfSampleCVaR90Peak_kW', 'MeanDifferenceVsB2_pp', 'DiffCI95Low', 'DiffCI95High', ...
+    'MedianDifferenceVsB2_pp', 'WilcoxonP', 'TrialsBetterThanB2', 'TrialsWorseThanB2', ...
     'CVaR90DifferenceVsB2_kW', 'CVaR90DiffCI95Low', 'CVaR90DiffCI95High', 'FeasibleTrials'}, ...
     fullfile(O, 'scenario_count_summary.csv'));
 
